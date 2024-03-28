@@ -1,69 +1,57 @@
-import React, { useState } from "react";
-import { Box, Heading, Text, Link, VStack, HStack, IconButton, useColorMode, useColorModeValue } from "@chakra-ui/react";
-import { FaArrowUp, FaMoon, FaSun } from "react-icons/fa";
+import { useState } from "react";
+import { VStack, HStack, Text, Button } from "@chakra-ui/react";
 
-const LinkItem = ({ link, title, summary, upvotes, onUpvote, userHasUpvoted }) => {
+const initialStories = [
+  { id: 1, title: "Story 1", summary: "Summary of story 1", link: "#", upvotes: 5, topics: ["tech", "innovation"] },
+  { id: 2, title: "Story 2", summary: "Summary of story 2", link: "#", upvotes: 3, topics: ["health", "science"] },
+];
+
+const TopicFilter = ({ topics, onTopicSelect }) => {
   return (
-    <Box p={4} borderWidth={1} borderRadius="md" boxShadow="md" bg={useColorModeValue("white", "gray.700")}>
-      <Heading as="h3" size="md" mb={2}>
-        <Link href={link} isExternal>
-          {title}
-        </Link>
-      </Heading>
-      <Text mb={2}>{summary}</Text>
-      <HStack>
-        <IconButton icon={<FaArrowUp />} aria-label="Upvote" onClick={onUpvote} colorScheme={userHasUpvoted ? "green" : "gray"} />
-        <Text>{upvotes} upvotes</Text>
-      </HStack>
-    </Box>
+    <HStack spacing={2} mb={4}>
+      {topics.map((topic) => (
+        <Button key={topic} onClick={() => onTopicSelect(topic)}>
+          {topic}
+        </Button>
+      ))}
+    </HStack>
+  );
+};
+
+const StoryList = ({ stories }) => {
+  const sortedStories = stories.sort((a, b) => b.upvotes - a.upvotes);
+
+  return (
+    <VStack align="stretch">
+      {sortedStories.map((story) => (
+        <HStack key={story.id} p={4} boxShadow="md" borderRadius="lg">
+          <VStack align="start">
+            <Text fontWeight="bold">{story.title}</Text>
+            <Text>{story.summary}</Text>
+            <Text>Upvotes: {story.upvotes}</Text>
+          </VStack>
+        </HStack>
+      ))}
+    </VStack>
   );
 };
 
 const Index = () => {
-  const [links, setLinks] = useState([
-    {
-      id: 1,
-      link: "https://example.com",
-      title: "Example Link",
-      summary: "This is an example link.",
-      upvotes: 10,
-    },
-    {
-      id: 2,
-      link: "https://another-example.com",
-      title: "Another Example",
-      summary: "This is another example link.",
-      upvotes: 5,
-    },
-  ]);
+  const [stories, setStories] = useState(initialStories);
+  const topics = Array.from(new Set(stories.flatMap((story) => story.topics)));
+  const [selectedTopic, setSelectedTopic] = useState(null);
 
-  const [userUpvotes, setUserUpvotes] = useState([]);
-
-  const { toggleColorMode } = useColorMode();
-  const bgColor = useColorModeValue("gray.100", "gray.800");
-  const iconColor = useColorModeValue(<FaMoon />, <FaSun />);
-
-  const handleUpvote = (id) => {
-    if (!userUpvotes.includes(id)) {
-      setLinks((prevLinks) => prevLinks.map((link) => (link.id === id ? { ...link, upvotes: link.upvotes + 1 } : link)));
-      setUserUpvotes((prevUpvotes) => [...prevUpvotes, id]);
-    }
+  const handleTopicSelect = (topic) => {
+    setSelectedTopic(topic);
   };
 
+  const filteredStories = selectedTopic ? stories.filter((story) => story.topics.includes(selectedTopic)) : stories;
+
   return (
-    <Box bg={bgColor} minH="100vh" py={8}>
-      <VStack spacing={4} align="stretch" maxW="container.md" mx="auto">
-        <HStack justify="space-between">
-          <Heading as="h1" size="xl">
-            Link Aggregator
-          </Heading>
-          <IconButton icon={iconColor} aria-label="Toggle color mode" onClick={toggleColorMode} />
-        </HStack>
-        {links.map((link) => (
-          <LinkItem key={link.id} link={link.link} title={link.title} summary={link.summary} upvotes={link.upvotes} onUpvote={() => handleUpvote(link.id)} userHasUpvoted={userUpvotes.includes(link.id)} />
-        ))}
-      </VStack>
-    </Box>
+    <VStack spacing={4}>
+      <TopicFilter topics={topics} onTopicSelect={handleTopicSelect} />
+      <StoryList stories={filteredStories} />
+    </VStack>
   );
 };
 
